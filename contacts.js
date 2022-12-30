@@ -1,6 +1,7 @@
 const fs = require("fs").promises;
 const path = require("path");
 const contactsPath = path.resolve(__dirname, "./db/contacts.json");
+const { v4: uuidv4 } = require("uuid");
 const colors = require("colors");
 
 async function readDb() {
@@ -12,17 +13,6 @@ async function readDb() {
 const updateContacts = async (contacts) => {
   await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
 };
-
-function createId(data) {
-  const arrId = data.map((item) => item.id);
-  let max = 0;
-  for (id of arrId) {
-    if (id > max) {
-      max = Number(id);
-    }
-  }
-  return String(max + 1);
-}
 
 async function listContacts() {
   try {
@@ -38,6 +28,7 @@ async function getContactById(contactId) {
   try {
     const contacts = await readDb();
     const contact = contacts.find((contact) => contact.id === contactId);
+   
     if (contact) {
       console.log(`Contact with such id = ${contactId} was found!`.green);
       console.table(contact);
@@ -53,21 +44,22 @@ async function getContactById(contactId) {
 async function addContact(name, email, phone) {
   try {
     const contacts = await readDb();
+    const contactByName = contacts.find(
+      (contact) => contact.name.toLowerCase() === name.toLowerCase()
+    );
+    const contactByMail = contacts.find((contact) => contact.email === email);
+    const contactByPhone = contacts.find((contact) => contact.phone === phone);
 
-    if (
-      contacts.find(
-        (contact) => contact.name.toLowerCase() === name.toLowerCase()
-      )
-    )
+    if (contactByName) 
       throw new Error("This name already exists!");
 
-    if (contacts.find((contact) => contact.email === email))
+    if (contactByMail)
       throw new Error("This email already exists!");
 
-    if (contacts.find((contact) => contact.phone === phone))
+    if (contactByPhone)
       throw new Error("This phone already exists!");
 
-    const id = createId(contacts);
+    const id = uuidv4();
     const newContact = { id, name, email, phone };
     contacts.push(newContact);
 
